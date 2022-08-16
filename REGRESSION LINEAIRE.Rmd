@@ -1,0 +1,273 @@
+---
+title: "COMMENT LE PIB ,LE TAUX D'INTERET DES BANQUES ET LES VARIATIONS DES COTISATIONS SOCIALES IMPACTENT LA CONSOMMATION FINALE AUX USA avec la régression ordinaire des moindres carrés"
+author: "DON RODRIGUE"
+date: "2022-08-10"
+output: html_document
+---
+
+
+# EXPLORATION DES DONNEES
+
+- Les analyses exploratoires – ou EDA en anglais pour Explanatory Data Analysis- servent à faire un état des lieux des données : Quelles sont les dimensions (nombre de lignes, nombre de colonnes) du data frame ? Quel est le pourcentage de données manquantes, où sont elles ? Quelles sont les variables quantitatives et quelles sont les variables qualitatives. Quelles sont les distributions des variables ? Quelles sont, grossièrement, les relations entre les variables ? Etc…
+
+Je dirais que les analyses exploratoires interviennent immédiatement après le nettoyage des données, et juste avant les analyses descriptives, qui sont plus précises que les analyses exploratoires, et qui vont s’intéresser plus particulièrement à certaines variables.
+
+##Le package DataExplorer
+- La promesse de DataExplorer c’est d’automatiser l’exploration des variables (dimension, données manquantes, distribution, corrélation etc) d’un data frame, pour nous permettre de nous concentrer sur la compréhension des données.
+
+##Analyses exploratoires de la structure des données
+###La fonction introduce()
+###La fonction plot_intro()
+###La fonction plot_str()
+
+- Pour les Analyses exploratoires de la structure des données
+Pour cette première étape, trois fonctions ont retenu mon attention, introduce(), plot_intro() et plot_str(). Elles permettent toutes les trois d’obtenir des informations sur la structure de données, c’est-à-dire leurs dimensions, les class (ou types de variables), la présence de données manquantes, etc.
+
+####Modification des class :ici nous ne modifierons pas les classes 
+###Analyses exploratoires des données manquantes
+Les données manquantes c’est toujours embêtant, à minima parce que, par défaut, R ne les gère pas. Il faut souvent utiliser l’argument na.rm=TRUE dans les fonctions descriptives, par exemple. Et puis aussi parce que certaines approches statistiques ne les tolèrent pas, comme l’ACP par exemple. C’est donc bien de réaliser une exploration des données manquantes pour se faire une idée de leur nombre et de leur répartition.
+
+####La fonction plot_missing()
+####La fonction profiling_missing()
+###Analyses exploratoires la distribution des variables
+
+Après l’étude de la structure et des données manquantes, on peut s’intéresser à la distribution des variables. Les graphiques permettent une synthèse optimale de l’information.
+
+####Variables qualitatives
+Pour explorer les variables qualitatives, le package DataExplorer propose la fonction plot_bar().
+Les distributions peuvent être obtenues de façon globale, ou par sous-groupes
+
+####variables quantitatives
+
+variables quantitatives
+De façon analogue, pour les variables quantitatives, le package propose les fonctions plot_histogram() et plot_qq(). Ces fonctions sont plutôt pratiques pour visualiser les distributions et se faire une première idée quant à la normalité ou non des variables 
+
+####Exploration des relations entre les variables
+Les relations entre les variables peuvent également être explorées à l’aide de graphiques, générés notamment par les fonctions plot_correlation(), plot_prcomp(), plot_boxplot() et plot_scatterplot()
+
+###Analyses exploratoires des corrélations
+La fonction plot_correlation permet d’obtenir une matrice de corrélation visuelle pour l’ensemble des variables (quantitatives ou qualitatives). Obtenir une matrice de corrélation sur des variables qualitatives peut paraître un peu surprenant… Pour cela des variables indicatrices, ou “dummy” variables (comportant des 0 et des 1) sont créées et les corrélations sont calculées à partir de ces données numériques.
+
+Le package comporte d’ailleurs une fonction (dummify() – très intéressante !) pour créer ces dummy variables. Mais ici la fonction plot_correlation le fait de toute seule.
+
+####La fonction plot_correlation
+####La fonction plot_prcomp()
+####Laisons entre une variable qualitative et les variables quantitatives
+####Liaisons entre une variable quantitative spécifique et les autres variables quantitatives.
+####Création de dummy variables
+####Rapport automatisé des analyses exploratoires
+##Conclusion
+
+```{r}
+#retrouver le fichier csv et en extraire le texte
+    df = read.csv(file.choose())
+```
+
+
+
+```{r}
+df
+```
+
+```{r}
+head(df)
+```
+```{r}
+tail(df)
+```
+```{r}
+#install.packages("DataExplorer")
+library("DataExplorer") 
+```
+```{r}
+#install.packages("funModeling")
+library("funModeling")
+```
+```{r}
+introduce(df)
+```
+```{r}
+plot_intro(df) 
+```
+```{r}
+plot_str(df)
+```
+
+```{r}
+plot_missing(df) 
+```
+```{r}
+profile_missing(df)
+```
+```{r}
+# global
+library(DataExplorer)
+# plot_bar(df) # Pas de valeurs qualitatives donc la fonction ne peut s'executer
+```
+```{r}
+plot_histogram(df) 
+```
+Les depenses sociales et les depenses de consommation finale semblent avoir la meme evolution.
+
+```{r}
+plot_qq(df) 
+```
+```{r}
+cov(df)
+```
+- Commentaire
+Le taux d'interet covarie negativement avec les cotisations sociales puis avec la consommation finale mais covarient positivement avec le PIB
+Le PIB covarie negativement avec les cotisations sociales puis avec la consommation finale
+La consommation finale covarie positivement avec les cotisations sociales. Nous allons etudier la force de ces variations avec la matrice de correlation.
+
+
+```{r}
+plot_correlation(df, cor_args = list("use" = "pairwise.complete.obs")) 
+```
+- Commentaire
+
+Il ya correlation negative forte ente le taux d'interet et les cotisations sociales puis avec la consommation finale mais une correlation positive faible avec le PIB.Cela montre qu'en moyenne, la dépense de consommation finale des États-Unis a tendance à diminuer modérément à mesure que le coût d'emprunt augmente.
+Il ya correlation negative ente le PIB et les cotisations sociales puis d'autre part avec aussi la consommation finale.Cela montre qu'en moyenne, la dépense de consommation finale des États-Unis tend à diminuer modérément à mesure que l'activité économique, corrigée de l'inflation, augmente.
+Il ya une très forte correlation positive entre la consommation finale et les cotisations sociales Cela montre qu'en moyenne, la dépense de consommation finale des États-Unis a tendance à fortement augmenter lorsque les organisations et les individus américains augmentent leurs cotisations à la sécurité sociale.
+
+
+
+# MODELISATION PAR LA REGRESSION LINEAIRE MULTIVARIEE
+
+Nous la ferons en 10 etapes:
+
+- Etude des corrélations linéaires entre les variables explicatives deux à deux (pairwise)
+- Evaluation de la linéarité entre chacune des variables explicatives (ou indépendantes) de type numérique et la variable réponse (ou dépendante)
+- Ajustement du modèle complet
+- Evaluation des multi-collinéarités par les VIFs
+- Evaluation des hypothèses de normalité et d’homoscédasticité des résidus du modèle complet
+- Interprétation des résultats du modèle complet
+- Sélection du modèle parcimonieux
+- Recherche des outliers
+- Interprétation du modèle parcimonieux
+- Synthèse des résultats
+
+
+```{r}
+# Dataframe des variables explicatives
+df1 = df[,-3] # On supprime la 2eme colonne
+df1
+```
+# Evaluation de la linéarité entre la réponse et les variables explicatives numériques
+
+- Etude des corrélations linéaires entre les variables explicatives deux à deux (pairwise)
+
+```{r}
+library(GGally)
+ggpairs(df1) 
+```
+- Evaluation de la linéarité entre la réponse et les variables explicatives numériques
+
+Pour cela, j’utilise généralement la fonction scatterplotMatrix du package car. Mais avant cela, je vais limiter les variables explicatives aux seules variables numériques :
+# exemple de sripst  de retrait des variables binaires vs et am
+mtcars3 <- mtcars %>% 
+    select(-vs, -am)
+
+```{r}
+library(car)
+scatterplotMatrix(df)
+```
+On va regarder les  graphiques de la 3eme ligne qui représentent la relation entre la variable réponse, la variable dependante consommation finale et les autres  variables. 
+Ici il s'agit de voir si les relations sont globalement linéaires ou curvillieaires.
+Apparenment elles sont globalement lineaires.
+Si les relations etaient curvilinéaires (courbées) on les aurait  linéariser en utilisant une transformation log de la variable prédictive
+
+# Ajustement du modèle complet
+
+```{r}
+#ajustement du modèle complet
+mod.rlm1 <- lm(final.consumption~., data=df) 
+mod.rlm1
+```
+Le terme ~. permet d’inclure toutes les variables explicatives présentent dans les données df
+Pour vérifier que tout s’est bien déroulé, nous pouvons afficher la table de régression , en utilisant la fonction summary()
+```{r}
+summary(mod.rlm1)
+```
+- Commentaire 
+
+Il est nécessaire de vérifier :
+
+que tous les paramètres ont été estimés : il ne doit pas avoir de NA dans cette table de régression
+que les erreurs standard des pentes partielles ne sont pas très grands par rapport aux pentes partielles. Si c’est le cas, c’est qu’e  ’il existe un phénomène de multi-collinéarité. Celui-ci pourra être objectivé, à la prochaine étape, celle de la vérification des VIFs.
+Ici tout est OK.
+
+# Evaluation des multicollinéarités par les VIF
+
+La page d’aide de la fonction check_collinearity() du package performance fournit une description détaillée de la multicolinéarité. Voici une traduction, un peu simplifiée.
+
+La multicolinéarité ne doit pas être confondue avec une forte corrélation brute entre les prédicteurs. Ce qui compte, c’est l’association entre une ou plusieurs variables prédictives, conditionnellement aux autres variables du modèle
+
+Alors, pour être honnête; jusqu’à ce que je lise cette phrase, pour moi forte corrélation brute en les prédicteurs et multicollinéarité était la même chose…
+
+La multicolinéarité signifie qu’une fois que l’on connaît l’effet d’une variable explicative sur la réponse, la valeur à connaître, au niveau de l’autre variable prédictive, est faible.Autrement dit, en cas de multicolinéarité, l’une des variables prédictive n’aide pas beaucoup en termes de meilleure compréhension du modèle ou de prédiction du résultat.En cas de multicolinéarité, le modèle semble suggérer que les variables explicatives en question ne sont pas associées à la réponse (pentes partielles faibles, erreurs types élevées), alors que ces variables sont en réalité fortement associés à la réponse, c’est-à-dire qu’elles pourraient effectivement avoir un effet important (McElreath 2020, chapitre 6.1).Les VIFs (Variance Inflation Factor) permettent de mesurer l’ampleur de la multicolinéarité des variables explicatives incluses dans le modèle. La racine carrée du VIF indique de combien de fois l’erreur standard d’une pente partielle est augmentée à cause de la multicollinéarité.Un VIF inférieur à 5 indique une faible corrélation de cette variable explicative avec d’autres variables explicatives. Une valeur comprise entre 5 et 10 indique une corrélation modérée, tandis que des valeurs VIF supérieures à 10 sont le signe d’une corrélation élevée et non tolérable (James et al. 2013).
+
+Lorsque qu’une variable à un VIF > 10, il est nécessaire de la retirer du modèle,  puis de recalculer les VIFs, et de retirer une seconde variable si nécessaire, etc… jusqu’à n’obtenir que des VIFs <5.
+
+Le seuil de 10 ne fait pas forcément consensus, j’utilise plutôt 5.
+
+La fonction check_collinearity(), du package performance permet d’obtenir ces VIFs très facilement 
+
+
+```{r}
+library(performance)
+check_collinearity(mod.rlm1)
+```
+- Commentaire
+
+il n'y a pas de multicolinéarité entre les variables
+
+# Evaluation des hypothèses de normalité et d’homoscédasticité des résidus
+
+Là encore le package performance propose des fonctions très utiles :
+
+check_model() : qui réalise un diagnostic de régression à l’aide de 6 graphiques, et qui permet d’évaluer les hypothèses de linéarité, d’homoscédasticité et de normalité des résidus, ainsi que les multi-collinéarité et les valeurs influentes.
+
+
+
+
+Vous pouvez réaliser un test de Shapiro-Wilk pour tester la normalité des résidus en employant la fonction check_normality() :
+
+
+
+Vous pouvez aussi réaliser un test de Breusch-pagan pour tester l’hypothèse d’homoscédasticité des résidus en employant la fonction check_heteroscedasticity():
+
+
+
+
+
+# Interprétation des résultats du modèle complet
+La table de régression
+
+```{r}
+summary(mod.rlm1)
+```
+Call:
+lm(formula = final.consumption ~ ., data = df)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-6.535e+12  2.976e+10  1.957e+11  3.262e+11  1.800e+12 
+
+Coefficients:
+                Estimate Std. Error t value Pr(>|t|)    
+(Intercept)    1.033e+12  1.227e+12   0.842    0.403    
+lending_rate  -9.378e+10  1.001e+11  -0.937    0.353    
+social_contri  1.192e+01  6.554e-01  18.192   <2e-16 ***
+GDP           -5.646e+10  1.936e+11  -0.292    0.772    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 1.291e+12 on 57 degrees of freedom
+Multiple R-squared:  0.9297,	Adjusted R-squared:  0.926 
+F-statistic: 251.4 on 3 and 57 DF,  p-value: < 2.2e-16
+
+```{r}
+create_report(heart_disease)
+```
+
